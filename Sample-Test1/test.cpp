@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "../TDD_DeviceDriver/DeviceDriver.cpp"
+#include "../TDD_DeviceDriver/Application.cpp"
 
 class MockFlashMemoryDevice : public FlashMemoryDevice {
 public:
@@ -15,6 +16,7 @@ class DeviceDriverFixture : public testing::Test {
 public:
 	MockFlashMemoryDevice device;
 	DeviceDriver driver{ &device };
+	Application app{ &driver };
 };
 
 TEST_F(DeviceDriverFixture, ReadSuccess) {
@@ -34,14 +36,7 @@ TEST_F(DeviceDriverFixture, ReadException) {
 		.WillOnce(testing::Return(MockFlashMemoryDevice::NormalData))
 		.WillOnce(testing::Return(MockFlashMemoryDevice::AbnormalData));
 
-	try {
-		driver.read(0);
-		FAIL();
-	}
-	catch (ReadFailException e) { }
-	catch (...) {
-		FAIL();
-	}
+	EXPECT_THROW(driver.read(0), ReadFailException);
 }
 
 TEST_F(DeviceDriverFixture, WriteSuccess) {
@@ -51,26 +46,29 @@ TEST_F(DeviceDriverFixture, WriteSuccess) {
 	EXPECT_CALL(device, write, (_, _), ())
 		.Times(1);
 
-	try {
-		driver.write(0, (unsigned char)MockFlashMemoryDevice::NormalData);
-	}
-	catch (std::exception e) {
-		FAIL();
-	}
+	driver.write(0, (unsigned char)MockFlashMemoryDevice::NormalData);
 }
 
 TEST_F(DeviceDriverFixture, WriteException) {
 	EXPECT_CALL(device, read, (_), ())
 		.WillRepeatedly(testing::Return(MockFlashMemoryDevice::NormalData));
 
-	try {
-		driver.write(0, (unsigned char)MockFlashMemoryDevice::NormalData);
-		FAIL();
-	}
-	catch (WriteFailException e) {
+	EXPECT_THROW(driver.write(0, (unsigned char)MockFlashMemoryDevice::NormalData), WriteFailException);
+}
 
-	}
-	catch (...) {
-		FAIL();
-	}
+TEST_F(DeviceDriverFixture, ApplicationReadAndPrint0to0) {
+
+    EXPECT_CALL(device, read, (_), ())
+		.Times(5)
+        .WillRepeatedly(testing::Return(MockFlashMemoryDevice::NormalData));
+
+    app.ReadAndPrint(0, 0);
+}
+
+TEST_F(DeviceDriverFixture, ApplicationReadAndPrint0to4) {
+    EXPECT_CALL(device, read, (_), ())
+		.Times(25)
+        .WillRepeatedly(testing::Return(MockFlashMemoryDevice::NormalData));
+
+	app.ReadAndPrint(0, 4);
 }
