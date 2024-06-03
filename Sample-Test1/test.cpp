@@ -6,15 +6,8 @@ class TestFlashMemoryDevice : public FlashMemoryDevice {
 public:
 	static const int NormalData = 0xAA;
 	static const int AbnormalData = 0xBB;
-	static const int AbnormalDataAddress = 0x1;
 
 	virtual unsigned char read(long address) {
-		if (address == AbnormalDataAddress) {
-			static int i = 0;
-			i++;
-			if (i % 5 == 0) return AbnormalData;
-			return NormalData;
-		}
 		return NormalData;
 	}
 
@@ -26,6 +19,7 @@ public:
 class MockFlashMemoryDevice : public TestFlashMemoryDevice {
 public:
 	MOCK_METHOD(unsigned char, read, (long address), (override));
+	MOCK_METHOD(void, write, (long address, unsigned char data), (override));
 };
 
 class DeviceDriverFixture : public testing::Test {
@@ -35,18 +29,14 @@ public:
 };
 
 TEST_F(DeviceDriverFixture, ReadSuccess) {
-	long addr = 0x0;
-
 	EXPECT_CALL(device, read, (_), ())
 		.Times(5)
 		.WillRepeatedly(testing::Return(MockFlashMemoryDevice::NormalData));
 
-	EXPECT_EQ(driver.read(addr), MockFlashMemoryDevice::NormalData);
+	EXPECT_EQ(driver.read(0), MockFlashMemoryDevice::NormalData);
 }
 
 TEST_F(DeviceDriverFixture, ReadException) {
-	long addr = MockFlashMemoryDevice::AbnormalDataAddress;
-
 	EXPECT_CALL(device, read, (_), ())
 		.Times(5)
 		.WillOnce(testing::Return(MockFlashMemoryDevice::NormalData))
@@ -56,8 +46,42 @@ TEST_F(DeviceDriverFixture, ReadException) {
 		.WillOnce(testing::Return(MockFlashMemoryDevice::AbnormalData));
 
 	try {
-		driver.read(addr);
+		driver.read(0);
 		FAIL();
 	}
-	catch (...) { }
+	catch (ReadFailException e) { }
+	catch (...) {
+		FAIL();
+	}
+}
+
+TEST_F(DeviceDriverFixture, WriteSuccess) {
+	EXPECT_CALL(device, read, (_), ())
+		.WillRepeatedly(testing::Return(0xFF));
+
+	EXPECT_CALL(device, write, (_, _), ())
+		.Times(1);
+
+	try {
+		driver.write(0, (unsigned char)MockFlashMemoryDevice::NormalData);
+	}
+	catch (std::exception e) {
+		FAIL();
+	}
+}
+
+TEST_F(DeviceDriverFixture, WriteException) {
+	EXPECT_CALL(device, read, (_), ())
+		.WillRepeatedly(testing::Return(MockFlashMemoryDevice::NormalData));
+
+	try {
+		driver.write(0, (unsigned char)MockFlashMemoryDevice::NormalData);
+		FAIL();
+	}
+	catch (WriteFailException e) {
+
+	}
+	catch (...) {
+		FAIL();
+	}
 }
