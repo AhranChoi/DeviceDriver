@@ -18,16 +18,18 @@ DeviceDriver::DeviceDriver(FlashMemoryDevice* hardware) : m_hardware(hardware)
 
 int DeviceDriver::read(long address)
 {
-    int result = (int)(m_hardware->read(address));
-    for (int i = 1; i < 5; i++) {
-        int temp = (int)(m_hardware->read(address));
+    static const int _ReadRepeat = 5;
+    unsigned char result = m_hardware->read(address);
+
+    for (int i = 1; i < _ReadRepeat; i++) {
+        int temp = m_hardware->read(address);
         if (result != temp) throw ReadFailException();
     }
-    return result;
+    return (int)result;
 }
 
 void DeviceDriver::write(long address, int data)
 {
-    if (m_hardware->read(address) != 0xFF) throw WriteFailException();
+    if (m_hardware->read(address) != CLEAN_SPACE) throw WriteFailException();
     m_hardware->write(address, (unsigned char)data);
 }

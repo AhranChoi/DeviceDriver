@@ -2,22 +2,11 @@
 #include "gmock/gmock.h"
 #include "../TDD_DeviceDriver/DeviceDriver.cpp"
 
-class TestFlashMemoryDevice : public FlashMemoryDevice {
+class MockFlashMemoryDevice : public FlashMemoryDevice {
 public:
 	static const int NormalData = 0xAA;
 	static const int AbnormalData = 0xBB;
 
-	virtual unsigned char read(long address) {
-		return NormalData;
-	}
-
-	virtual void write(long address, unsigned char data) {
-
-	}
-};
-
-class MockFlashMemoryDevice : public TestFlashMemoryDevice {
-public:
 	MOCK_METHOD(unsigned char, read, (long address), (override));
 	MOCK_METHOD(void, write, (long address, unsigned char data), (override));
 };
@@ -57,7 +46,7 @@ TEST_F(DeviceDriverFixture, ReadException) {
 
 TEST_F(DeviceDriverFixture, WriteSuccess) {
 	EXPECT_CALL(device, read, (_), ())
-		.WillRepeatedly(testing::Return(0xFF));
+		.WillRepeatedly(testing::Return(DeviceDriver::CLEAN_SPACE));
 
 	EXPECT_CALL(device, write, (_, _), ())
 		.Times(1);
