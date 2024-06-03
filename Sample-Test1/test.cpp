@@ -57,7 +57,6 @@ TEST_F(DeviceDriverFixture, WriteException) {
 }
 
 TEST_F(DeviceDriverFixture, ApplicationReadAndPrint0to0) {
-
     EXPECT_CALL(device, read, (_), ())
 		.Times(5)
         .WillRepeatedly(testing::Return(MockFlashMemoryDevice::NormalData));
@@ -71,4 +70,15 @@ TEST_F(DeviceDriverFixture, ApplicationReadAndPrint0to4) {
         .WillRepeatedly(testing::Return(MockFlashMemoryDevice::NormalData));
 
 	app.ReadAndPrint(0, 4);
+}
+
+TEST_F(DeviceDriverFixture, ApplicationWriteAll) {
+	EXPECT_CALL(device, read, (_), ())
+		.Times(5)
+		.WillRepeatedly(testing::Return(DeviceDriver::CLEAN_SPACE));
+
+    EXPECT_CALL(device, write, (_, _), ())
+		.Times(5);
+
+	app.WriteAll(MockFlashMemoryDevice::NormalData);
 }
