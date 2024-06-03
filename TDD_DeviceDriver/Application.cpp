@@ -16,8 +16,8 @@ public:
 	}
 
 	void WriteAll(unsigned char value) {
-		for (int a = 0; a <= 4; a++) {
-			driver->write(a, value);
+		for (int address = 0; address <= 4; address++) {
+			driver->write(address, value);
 		}
 	}
 
